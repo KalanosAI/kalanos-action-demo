@@ -1,0 +1,35 @@
+name: Robotics dataset audit
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Kalanos dataset audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Audit the synthetic fixture
+        id: audit
+        uses: KalanosAI/kalanos-action@91e48a08002eb467f64a87fe03575fe8449a8eaf # v1.0.1
+        with:
+          path: ./fixtures/demo
+          version: '0.9.3'
+          fail-on: blocked,review,unknown
+          job-summary: 'true'
+      - name: Upload the synthetic audit report
+        if: ${{ !cancelled() && steps.audit.outputs.report-path != '' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: kalanos-audit
+          path: ${{ steps.audit.outputs.report-path }}
+          if-no-files-found: error
+          retention-days: 14
